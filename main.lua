@@ -1,10 +1,18 @@
---// Lemon Empire Hub v2.2 - Светло-синий + Auto Sell
+--// Lemon Empire Hub v2.3 - Исправленный Auto Fruit + Цвет
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Настройка цвета (светло-синий)
+Rayfield.Theme = {
+    Default = Color3.fromRGB(30, 30, 50),
+    TextColor = Color3.fromRGB(220, 240, 255),
+    MainColor = Color3.fromRGB(40, 80, 160),      -- Основной синий
+    AccentColor = Color3.fromRGB(80, 160, 255),   -- Светло-синий акцент
+}
+
 local Window = Rayfield:CreateWindow({
-    Name = "🍋 Lemon Empire Hub v2.2",
+    Name = "🍋 Lemon Empire Hub v2.3",
     LoadingTitle = "Lemon Empire",
-    LoadingSubtitle = "phimkok",
+    LoadingSubtitle = "Исправления",
     ConfigurationSaving = { Enabled = false },
     KeySystem = false
 })
@@ -12,17 +20,11 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Основное", 4483362458)
 local FarmTab = Window:CreateTab("Фарм", 4483362458)
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
 local userTycoon = workspace:FindFirstChild("Tycoon2")
 
 local AutoBuy = false
-local AutoUpgrade = false
-local AutoFruit = false
-local AutoRebirth = false
-local AutoEvolve = false
 local AutoSell = false
+local AutoFruit = false
 
 -- Auto Buy без Decoration
 local function buyAllNoDecoration()
@@ -31,12 +33,8 @@ local function buyAllNoDecoration()
     for _, obj in ipairs(purchases:GetDescendants()) do
         if obj:IsA("Model") then
             local name = obj.Name:lower()
-            if name:find("decoration") or name:find("decor") or name:find("skin") or name:find("effect") then
-                continue
-            end
-            local shown = obj:GetAttribute("Shown")
-            local purchased = obj:GetAttribute("Purchased")
-            if shown == true and purchased ~= true then
+            if name:find("decoration") or name:find("decor") or name:find("skin") then continue end
+            if obj:GetAttribute("Shown") and not obj:GetAttribute("Purchased") then
                 local purchase = obj:FindFirstChild("Purchase")
                 if purchase then pcall(function() purchase:InvokeServer() end) end
             end
@@ -45,56 +43,44 @@ local function buyAllNoDecoration()
 end
 
 -- Auto Sell
-local function autoSell()
-    local sellButton = userTycoon and userTycoon:FindFirstChild("Sell", true) or workspace:FindFirstChild("Sell", true)
-    if sellButton then
-        pcall(function()
-            fireclickdetector(sellButton:FindFirstChildOfClass("ClickDetector"))
-        end)
-    end
-end
-
 task.spawn(function()
     while true do
-        task.wait(0.15)
-        if AutoBuy then pcall(buyAllNoDecoration) end
-        if AutoSell then pcall(autoSell) end
+        task.wait(0.2)
+        if AutoSell then
+            pcall(function()
+                local sell = userTycoon and userTycoon:FindFirstChild("Sell", true)
+                if sell and sell:FindFirstChildOfClass("ClickDetector") then
+                    fireclickdetector(sell:FindFirstChildOfClass("ClickDetector"))
+                end
+            end)
+        end
     end
 end)
 
--- GUI (Светло-синий стиль)
-MainTab:CreateToggle({
-    Name = "🔄 Auto Buy (без Decoration)",
-    CurrentValue = false,
-    Callback = function(v) AutoBuy = v end
-})
+-- Улучшенный Auto Fruit
+task.spawn(function()
+    while true do
+        task.wait(0.3)
+        if AutoFruit then
+            for _, tree in ipairs(workspace:GetDescendants()) do
+                if tree.Name == "LemonTree" or tree.Name:find("Tree") then
+                    for _, fruit in ipairs(tree:GetDescendants()) do
+                        if fruit.Name == "Fruit" and fruit:FindFirstChild("ClickPart") then
+                            local cd = fruit.ClickPart:FindFirstChildOfClass("ClickDetector")
+                            if cd then
+                                pcall(function() fireclickdetector(cd) end)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
 
-MainTab:CreateToggle({
-    Name = "💰 Auto Sell (Продажа лимонов)",
-    CurrentValue = false,
-    Callback = function(v) AutoSell = v end
-})
+-- GUI
+MainTab:CreateToggle({Name = "🔄 Auto Buy (без Decoration)", CurrentValue = false, Callback = function(v) AutoBuy = v end})
+MainTab:CreateToggle({Name = "💰 Auto Sell", CurrentValue = false, Callback = function(v) AutoSell = v end})
+FarmTab:CreateToggle({Name = "🍋 Auto Fruit (Сбор лимонов)", CurrentValue = false, Callback = function(v) AutoFruit = v end})
 
-MainTab:CreateToggle({
-    Name = "⬆ Auto Upgrade",
-    CurrentValue = false,
-    Callback = function(v) AutoUpgrade = v end
-})
-
-FarmTab:CreateToggle({
-    Name = "🍋 Auto Fruit",
-    CurrentValue = false,
-    Callback = function(v) AutoFruit = v end
-})
-
-MainTab:CreateToggle({
-    Name = "♻ Auto Rebirth",
-    CurrentValue = false,
-    Callback = function(v) AutoRebirth = v end
-})
-
-Rayfield:Notify({
-    Title = "✅ Загружено v2.2",
-    Content = "Светло-синий + Auto Sell добавлен!",
-    Duration = 6
-})
+Rayfield:Notify({Title = "✅ v2.3 Загружено", Content = "Цвет изменён + Auto Fruit улучшен", Duration = 6})
